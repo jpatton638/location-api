@@ -13,8 +13,6 @@ class LocationApiController @Inject()(apiConnector: ApiConnector) extends Contro
     implicit request =>
 
       apiConnector.getUsersRegisteredInLondon.map {
-        case Right(users) if users.isEmpty =>
-          NotFound(s"Could not find users from London")
         case Right(users) =>
           Ok(s"$users")
         case Left(error) =>

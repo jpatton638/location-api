@@ -20,13 +20,13 @@ class ApiConnector @Inject()(config: ApiConfiguration, http: WSClient)(implicit 
 
       response.status match {
         case 200 =>
-          println(response.json)
           Right(response.json.asOpt[List[User]].getOrElse(List.empty))
-        case 404 =>
-          logger.warn(s"Could not find any users with City: London")
-          Right(List.empty)
+        case status @ 404 =>
+          val errorMessage = "Could not find any users with City: London"
+          logger.warn(errorMessage)
+          Left(ConnectorError(status, errorMessage))
         case status @ _ =>
-          logger.warn(s"Call failed with status $status")
+          logger.error(s"Call failed with status $status")
           Left(ConnectorError(status, response.body))
       }
     } recover {

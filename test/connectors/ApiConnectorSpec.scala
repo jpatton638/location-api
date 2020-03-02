@@ -56,22 +56,24 @@ class ApiConnectorSpec extends PlaySpec
         result.futureValue mustBe Right(List(Fixtures.fakeUser))
       }
 
-      "return an empty list if no users are found" in {
+      "return a ConnectorError with correct message if no users are found" in {
+
+        val errorCode = 404
 
         server.stubFor(
           get(urlEqualTo(url)).willReturn(
             aResponse()
-              .withStatus(404)
+              .withStatus(errorCode)
               .withBody("[]")
           )
         )
 
         val result = connectorUnderTest.getUsersRegisteredInLondon
 
-        result.futureValue mustBe Right(List.empty)
+        result.futureValue mustBe Left(ConnectorError(errorCode, "Could not find any users with City: London"))
       }
 
-      "return a ConnectorError if call returns other response" in {
+      "return a ConnectorError if call returns 5xx response" in {
 
         val errorCode = 500
         val errorBody = "An error occurred"

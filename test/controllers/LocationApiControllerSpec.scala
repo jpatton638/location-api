@@ -34,18 +34,6 @@ class LocationApiControllerSpec extends PlaySpec with OneAppPerTest with Mockito
         contentAsString(result) mustBe List(Fixtures.fakeUser).toString()
       }
 
-      "return 404 if the connector returned an empty list of users" in {
-
-        when(
-          mockApiConnector.getUsersRegisteredInLondon
-        ) thenReturn Future(Right(List.empty))
-
-        val result = controllerUnderTest.getUsers.apply(FakeRequest())
-
-        status(result) mustBe NOT_FOUND
-        contentAsString(result) mustBe s"Could not find users from London"
-      }
-
       "return an ConnectorError with the correct code and body if connector returned an error" in {
 
         val error = ConnectorError(502, "Could not reach Location API")
