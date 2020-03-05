@@ -1,6 +1,7 @@
 package utils
 
 import config.ApiConfiguration
+import helpers.GeneratorHelper
 import models.Coordinates
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -16,18 +17,18 @@ class RadiusCalculatorSpec extends PlaySpec with GuiceOneAppPerSuite with Genera
 
   private val radius: Double = 50.0
 
-  "RadiusCalculator.isWithin50MilesOfLondon" must {
+  "RadiusCalculator.isWithinRadius" must {
 
     "return true" when {
 
-      "the latitude is within or equal to 50 miles" in {
+      "the latitude is within 3 degrees and 50 miles or less from the given radius" in {
 
         forAll (inBoundsLatitudeGen) { lat =>
           controllerUnderTest.isWithinRadius(Coordinates(lat, londonLongitude), radius) mustBe true
         }
       }
 
-      "the longitude is within or equal to 50 miles" in {
+      "the longitude is within 3 degrees and 50 miles or less from the given radius" in {
         forAll (inBoundsLongitudeGen) { long =>
           controllerUnderTest.isWithinRadius(Coordinates(londonLatitude, long), radius) mustBe true
         }
@@ -35,6 +36,14 @@ class RadiusCalculatorSpec extends PlaySpec with GuiceOneAppPerSuite with Genera
     }
 
     "return false" when {
+
+      "the latitude is outside 3 degrees" in {
+        controllerUnderTest.isWithinRadius(Coordinates(londonLatitude + 3.1, londonLongitude), radius) mustBe false
+      }
+
+      "the longitude is outside 3 degrees" in {
+        controllerUnderTest.isWithinRadius(Coordinates(londonLatitude, londonLongitude + 3.1), radius) mustBe false
+      }
 
       "the latitude is outside 50 miles" in {
         forAll (outOfBoundsLatitudeGen) { lat =>

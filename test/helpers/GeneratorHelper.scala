@@ -1,12 +1,13 @@
-package utils
+package helpers
 
-import org.scalacheck._
-import org.scalacheck.Gen
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.PropertyChecks
 
 trait GeneratorHelper extends PropertyChecks {
 
-  // The values used as bounds for generation
+  /* The values used as bounds for generation were calculated using this
+     online calculator to give a close estimation for boundary values
+   */
 
   private val inBoundsLatitudeNorth: Double = 52.2300
   private val inBoundsLatitudeSouth: Double = 50.7840
@@ -20,6 +21,10 @@ trait GeneratorHelper extends PropertyChecks {
   private val outOfBoundsLongitudeEast = 1.2906
   private val outOfBoundsLongitudeWest = -1.0351
 
+  def doubleGen: Gen[Double] = Arbitrary.arbitrary[Double]
+
+  def bigDecimalGen: Gen[BigDecimal] = Arbitrary.arbitrary[BigDecimal]
+
   def inBoundsLatitudeGen: Gen[Double] =
     Gen.chooseNum[Double](inBoundsLatitudeSouth, inBoundsLatitudeNorth)
 
@@ -27,15 +32,13 @@ trait GeneratorHelper extends PropertyChecks {
     Gen.chooseNum[Double](inBoundsLongitudeWest, inBoundsLongitudeEast)
 
   def outOfBoundsLatitudeGen: Gen[Double] =
-    Arbitrary.arbitrary[Double] suchThat {
-      chosen => chosen < outOfBoundsLatitudeSouth || chosen > outOfBoundsLatitudeNorth
+   doubleGen suchThat {
+      chosen => chosen > outOfBoundsLatitudeSouth || chosen < outOfBoundsLatitudeNorth
     }
 
   def outOfBoundsLongitudeGen: Gen[Double] =
-    Arbitrary.arbitrary[Double] suchThat {
+    doubleGen suchThat {
       chosen => chosen < outOfBoundsLongitudeWest || chosen > outOfBoundsLongitudeEast
     }
 
-  def bigDecimalGen: Gen[BigDecimal] =
-    Arbitrary.arbitrary[BigDecimal]
 }

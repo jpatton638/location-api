@@ -6,7 +6,6 @@ import config.ApiConfiguration
 import models.Coordinates
 import javax.inject._
 
-
 class RadiusCalculator @Inject()(config: ApiConfiguration) {
 
   /*
@@ -22,7 +21,17 @@ class RadiusCalculator @Inject()(config: ApiConfiguration) {
 
     val distance: Double = calculateDistanceInMiles(coordinates, londonCoordinates)
 
-    if(abs(distance) <= radius) true else false
+    if(isWithinApproximateRange(coordinates, londonCoordinates)) {
+      abs(distance) <= radius
+    } else false
+  }
+
+  private def isWithinApproximateRange(origin: Coordinates, target: Coordinates) = {
+
+    val latDifference: Double = abs(origin.latitude - target.latitude)
+    val longDifference: Double = abs(origin.longitude - target.longitude)
+
+    if (latDifference <= 3 || longDifference <= 3) true else false
   }
 
   private def calculateDistanceInMiles(firstCoordinates: Coordinates, secondCoordinates: Coordinates): Double = {
@@ -42,5 +51,4 @@ class RadiusCalculator @Inject()(config: ApiConfiguration) {
 
     earthAverageRadiusInMiles * angleFromCoordinates
   }
-
 }

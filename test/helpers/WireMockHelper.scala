@@ -1,4 +1,4 @@
-package utils
+package helpers
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
@@ -7,7 +7,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Suite}
 trait WireMockHelper extends BeforeAndAfterAll with BeforeAndAfterEach {
   this: Suite =>
 
-  private val port = 9999
+  private val port: Int = 9999
 
   protected val server: WireMockServer = new WireMockServer(wireMockConfig().port(port))
 

@@ -1,7 +1,7 @@
 package models
 
+import helpers.GeneratorHelper
 import org.scalatestplus.play.PlaySpec
-import utils.GeneratorHelper
 
 class CoordinatesSpec extends PlaySpec with GeneratorHelper {
 
