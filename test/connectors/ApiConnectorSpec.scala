@@ -5,9 +5,10 @@ import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.WSClient
 import config.ApiConfiguration
-import utils.{Fixtures, WireMockHelper}
+import utils.Fixtures
 import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, urlEqualTo}
 import com.github.tomakehurst.wiremock.http.Fault
+import helpers.WireMockHelper
 import models.ConnectorError
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatestplus.play.PlaySpec
