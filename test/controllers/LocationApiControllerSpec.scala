@@ -6,46 +6,70 @@ import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play._
 import play.api.test._
 import play.api.test.Helpers._
-import org.mockito.Matchers._
 import org.mockito.Mockito._
-import utils.Fixtures
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.libs.json.Json
+import utils.{Fixtures, RadiusCalculator}
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class LocationApiControllerSpec extends PlaySpec with OneAppPerTest with MockitoSugar {
+class LocationApiControllerSpec extends PlaySpec with GuiceOneAppPerSuite with MockitoSugar {
 
-  private val mockApiConnector = mock[ApiConnector]
-  private val controllerUnderTest = new LocationApiController(mockApiConnector)
+  private lazy val fakeCalculator: RadiusCalculator = app.injector.instanceOf[RadiusCalculator]
 
-  "HomeController" when {
+  private val mockApiConnector: ApiConnector = mock[ApiConnector]
 
-    "getUsersRegisteredInLondon is called" must {
+  private val controllerUnderTest: LocationApiController =
+    new LocationApiController(mockApiConnector, fakeCalculator)
 
-      "return OK and a user if connector returns a list of users" in {
+  "HomeController.getLondonUsers" must {
 
-        when(
-          mockApiConnector.getUsersRegisteredInLondon
-        ) thenReturn Future(Right(List(Fixtures.fakeUser)))
+    "return OK and a user if connector calls are successful" in {
 
-        val result = controllerUnderTest.getUsers.apply(FakeRequest())
+      when(
+        mockApiConnector.getUsersRegisteredInLondon
+      ) thenReturn Future(Right(List(Fixtures.fakeUserInLondon)))
 
-        status(result) mustBe OK
-        contentAsString(result) mustBe List(Fixtures.fakeUser).toString()
-      }
+      when(
+        mockApiConnector.getAllUsers
+      ) thenReturn Future(Right(List(Fixtures.fakeUserNearLondon)))
 
-      "return an ConnectorError with the correct code and body if connector returned an error" in {
+      val result = controllerUnderTest.getLondonUsers.apply(FakeRequest())
 
-        val error = ConnectorError(502, "Could not reach Location API")
+      status(result) mustBe OK
+      contentAsString(result) mustBe Json.toJson(Fixtures.listOfUsers).toString()
+    }
+
+    "return a Service Unavailable with the correct body" when {
+
+      val error: ConnectorError = ConnectorError(502, "Could not reach Location API")
+
+      val errorMessage: String =
+        s"Failed to retrieve users: Connector failed with status code ${error.code} and the following message: ${error.responseBody}"
+
+      "getUsersRegisteredInLondon call returns a ConnectorError" in {
 
         when(
           mockApiConnector.getUsersRegisteredInLondon
         ) thenReturn Future(Left(error))
 
-        val result = controllerUnderTest.getUsers.apply(FakeRequest())
+        val result = controllerUnderTest.getLondonUsers.apply(FakeRequest())
 
-        status(result) mustBe error.code
-        contentAsString(result) mustBe error.responseBody
+        status(result) mustBe SERVICE_UNAVAILABLE
+        contentAsString(result) mustBe errorMessage
+      }
+
+      "getAllUsers call returns a ConnectorError" in {
+
+        when(
+          mockApiConnector.getAllUsers
+        ) thenReturn Future(Left(error))
+
+        val result = controllerUnderTest.getLondonUsers.apply(FakeRequest())
+
+        status(result) mustBe SERVICE_UNAVAILABLE
+        contentAsString(result) mustBe errorMessage
       }
     }
   }

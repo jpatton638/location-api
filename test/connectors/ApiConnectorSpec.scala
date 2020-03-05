@@ -1,11 +1,5 @@
 package connectors
 
-import java.util
-
-import com.fasterxml.jackson.core.{JsonGenerator, JsonParser, JsonPointer, JsonToken, ObjectCodec}
-import com.fasterxml.jackson.databind.jsontype.TypeSerializer
-import com.fasterxml.jackson.databind.{JsonNode, SerializerProvider}
-import com.fasterxml.jackson.databind.node.JsonNodeType
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -17,7 +11,7 @@ import com.github.tomakehurst.wiremock.http.Fault
 import models.ConnectorError
 import org.scalatest.concurrent.{IntegrationPatience, ScalaFutures}
 import org.scalatestplus.play.PlaySpec
-import play.api.libs.json.{JsArray, Json}
+import play.api.libs.json.Json
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -35,7 +29,8 @@ class ApiConnectorSpec extends PlaySpec
 
   private lazy val connectorUnderTest = new ApiConnector(fakeApiConfig, fakeWSHttp)
 
-  private val url: String = "/city/London/users"
+  private val londonUsersUrl: String = "/city/London/users"
+  private val allUsersUrl: String = "/users"
 
   "ApiConnector" when {
 
@@ -44,16 +39,16 @@ class ApiConnectorSpec extends PlaySpec
       "return a list of users if 200 response with valid JSON is returned" in {
 
         server.stubFor(
-          get(urlEqualTo(url)).willReturn(
+          get(urlEqualTo(londonUsersUrl)).willReturn(
             aResponse()
               .withStatus(200)
-              .withBody(Json.toJson(List(Fixtures.fakeUser)).toString())
+              .withBody(Json.toJson(List(Fixtures.fakeUserNearLondon)).toString())
           )
         )
 
         val result = connectorUnderTest.getUsersRegisteredInLondon
 
-        result.futureValue mustBe Right(List(Fixtures.fakeUser))
+        result.futureValue mustBe Right(List(Fixtures.fakeUserNearLondon))
       }
 
       "return a ConnectorError with correct message if no users are found" in {
@@ -61,7 +56,7 @@ class ApiConnectorSpec extends PlaySpec
         val errorCode = 404
 
         server.stubFor(
-          get(urlEqualTo(url)).willReturn(
+          get(urlEqualTo(londonUsersUrl)).willReturn(
             aResponse()
               .withStatus(errorCode)
               .withBody("[]")
@@ -70,7 +65,7 @@ class ApiConnectorSpec extends PlaySpec
 
         val result = connectorUnderTest.getUsersRegisteredInLondon
 
-        result.futureValue mustBe Left(ConnectorError(errorCode, "Could not find any users with City: London"))
+        result.futureValue mustBe Left(ConnectorError(errorCode, "Could not find any users"))
       }
 
       "return a ConnectorError if call returns 5xx response" in {
@@ -79,7 +74,7 @@ class ApiConnectorSpec extends PlaySpec
         val errorBody = "An error occurred"
 
         server.stubFor(
-          get(urlEqualTo(url)).willReturn(
+          get(urlEqualTo(londonUsersUrl)).willReturn(
             aResponse()
               .withStatus(errorCode)
               .withBody(errorBody)
@@ -94,13 +89,80 @@ class ApiConnectorSpec extends PlaySpec
       "return a ConnectorError with 500 code if an exception is thrown by the GET call" in {
 
         server.stubFor(
-          get(urlEqualTo(url)).willReturn(
+          get(urlEqualTo(londonUsersUrl)).willReturn(
             aResponse()
               .withFault(Fault.MALFORMED_RESPONSE_CHUNK)
           )
         )
 
         val result = connectorUnderTest.getUsersRegisteredInLondon
+
+        result.futureValue mustBe Left(ConnectorError(500, "Remotely closed"))
+      }
+    }
+
+    "getAllUsers is called" should {
+
+      "return a list of users if 200 response with valid JSON is returned" in {
+
+        server.stubFor(
+          get(urlEqualTo(allUsersUrl)).willReturn(
+            aResponse()
+              .withStatus(200)
+              .withBody(Json.toJson(List(Fixtures.fakeUserNearLondon)).toString())
+          )
+        )
+
+        val result = connectorUnderTest.getAllUsers
+
+        result.futureValue mustBe Right(List(Fixtures.fakeUserNearLondon))
+      }
+
+      "return a ConnectorError with correct message if no users are found" in {
+
+        val errorCode = 404
+
+        server.stubFor(
+          get(urlEqualTo(allUsersUrl)).willReturn(
+            aResponse()
+              .withStatus(errorCode)
+              .withBody("[]")
+          )
+        )
+
+        val result = connectorUnderTest.getAllUsers
+
+        result.futureValue mustBe Left(ConnectorError(errorCode, "Could not find any users"))
+      }
+
+      "return a ConnectorError if call returns 5xx response" in {
+
+        val errorCode = 500
+        val errorBody = "An error occurred"
+
+        server.stubFor(
+          get(urlEqualTo(allUsersUrl)).willReturn(
+            aResponse()
+              .withStatus(errorCode)
+              .withBody(errorBody)
+          )
+        )
+
+        val result = connectorUnderTest.getAllUsers
+
+        result.futureValue mustBe Left(ConnectorError(errorCode, errorBody))
+      }
+
+      "return a ConnectorError with 500 code if an exception is thrown by the GET call" in {
+
+        server.stubFor(
+          get(urlEqualTo(allUsersUrl)).willReturn(
+            aResponse()
+              .withFault(Fault.MALFORMED_RESPONSE_CHUNK)
+          )
+        )
+
+        val result = connectorUnderTest.getAllUsers
 
         result.futureValue mustBe Left(ConnectorError(500, "Remotely closed"))
       }

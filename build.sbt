@@ -13,6 +13,7 @@ libraryDependencies += ws
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % Test
 libraryDependencies += "org.mockito" % "mockito-all" % "1.10.19" % Test
 libraryDependencies += "com.github.tomakehurst"   % "wiremock" % "2.26.1" % Test
+libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.14.0" % Test
 
 // Adds additional packages into Twirl
 //TwirlKeys.templateImports += "com.example.controllers._"
